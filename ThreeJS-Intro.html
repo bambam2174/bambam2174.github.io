@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<base href="../../../" />
+		<script src="page.js"></script>
+<style>
+code {
+    color: #0ba091;
+    font-size: larger;
+    line-height: 1.5;
+}
+</style>
+		<link type="text/css" rel="stylesheet" href="page.css" />
+	</head>
+	<body>
+		<h1>[name]</h1>
+
+		<h2>Overview</h2>
+
+		<p class="desc">
+			Within the three.js animation system you can animate various properties of your models:
+			the bones of a [page:SkinnedMesh skinned and rigged model], morph targets, different material properties
+			(colors, opacity, booleans), visibility and transforms. The animated properties can be faded in,
+			faded out, crossfaded and warped. The weight and time scales of different simultaneous
+			animations on the same object as well as on different objects can be changed
+			independently. Various animations on the same and on different objects can be
+			synchronized.<br /><br />
+
+			To achieve all this in one homogeneous system, the three.js animation system
+			[link:https://github.com/mrdoob/three.js/issues/6881 has completely changed in 2015]
+			(beware of outdated information!), and it has now an architecture similar to
+			Unity/Unreal Engine 4. This page gives a short overview of the main components of the
+			system and how they work together.
+
+		</p>
+
+		<h3>Animation Clips</h3>
+
+		<p class="desc">
+
+			If you have successfully imported an animated 3D object (it doesn't matter if it has
+			bones or morph targets or both) — for example exporting it from Blender with the
+			[link:https://github.com/KhronosGroup/glTF-Blender-IO glTF Blender exporter] and
+			loading it into a three.js scene using [page:GLTFLoader] — one of the response fields
+			should be an array named "animations", containing the [page:AnimationClip AnimationClips]
+			for this model (see a list of possible loaders below).<br /><br />
+
+			Each *AnimationClip* usually holds the data for a certain activity of the object. If the
+			mesh is a character, for example, there may be one AnimationClip for a walkcycle, a second
+			for a jump, a third for sidestepping and so on.
+
+		</p>
+
+		<h3>Keyframe Tracks</h3>
+
+		<p class="desc">
+
+			Inside of such an *AnimationClip* the data for each animated property are stored in a
+			separate [page:KeyframeTrack]. Assuming a character object has a [page:Skeleton skeleton],
+			one keyframe track could store the data for the position changes of the lower arm bone
+			over time, a different track the data for the rotation changes of the same bone, a third
+			the track position, rotation or scaling of another bone, and so on. It should be clear,
+			that an AnimationClip can be composed of lots of such tracks.<br /><br />
+
+			Assuming the model has morph targets (for example one morph
+			target showing a friendly face and another showing an angry face), each track holds the
+			information as to how the [page:Mesh.morphTargetInfluences influence] of a certain morph
+			target changes during the performance of the clip.
+
+		</p>
+
+		<h3>Animation Mixer</h3>
+
+		<p class="desc">
+
+			The stored data forms only the basis for the animations - actual playback is controlled by
+			the [page:AnimationMixer]. You can imagine this not only as a player for animations, but
+			as a simulation of a hardware like a real mixer console, which can control several animations
+			simultaneously, blending and merging them.
+
+		</p>
+
+		<h3>Animation Actions</h3>
+
+		<p class="desc">
+
+			The *AnimationMixer* itself has only very few (general) properties and methods, because it
+			can be controlled by the [page:AnimationAction AnimationActions]. By configuring an
+			*AnimationAction* you can determine when a certain *AnimationClip* shall be played, paused
+			or stopped on one of the mixers, if and how often the clip has to be repeated, whether it
+			shall be performed with a fade or a time scaling, and some additional things, such crossfading
+			or synchronizing.
+
+		</p>
+
+		<h3>Animation Object Groups</h3>
+
+		<p class="desc">
+
+			If you want a group of objects to receive a shared animation state, you can use an
+			[page:AnimationObjectGroup].
+
+		</p>
+
+		<h3>Supported Formats and Loaders</h3>
+
+		<p class="desc">
+			Note that not all model formats include animation (OBJ notably does not), and that only some
+			three.js loaders support [page:AnimationClip AnimationClip] sequences. Several that <i>do</i>
+			support this animation type:
+		</p>
+
+			<ul>
+				<li>[page:ObjectLoader THREE.ObjectLoader]</li>
+				<li>THREE.BVHLoader</li>
+				<li>THREE.ColladaLoader</li>
+				<li>THREE.FBXLoader</li>
+				<li>[page:GLTFLoader THREE.GLTFLoader]</li>
+				<li>THREE.MMDLoader</li>
+			</ul>
+
+		<p class="desc">
+			Note that 3ds max and Maya currently can't export multiple animations (meaning animations which are not
+			on the same timeline) directly to a single file.
+		</p>
+
+		<h2>Example</h2>
+
+		<code>
+		let mesh;<br/>
+<br/>
+<br/>
+		// Create an AnimationMixer, and get the list of AnimationClip instances<br/>
+		const mixer = new THREE.AnimationMixer( mesh );<br/>
+		const clips = mesh.animations;<br/>
+<br/>
+		// Update the mixer on each frame<br/>
+		function update () {<br/>
+			mixer.update( deltaSeconds );<br/>
+		}<br/>
+<br/>
+		// Play a specific animation<br/>
+		const clip = THREE.AnimationClip.findByName( clips, 'dance' );<br/>
+		const action = mixer.clipAction( clip );<br/>
+		action.play();<br/>
+<br/>
+		// Play all animations<br/>
+		clips.forEach( function ( clip ) {<br/>
+			mixer.clipAction( clip ).play();<br/>
+		} );<br/>
+		</code>
+
+		<h1>[name]</h1>
+
+		<p>The goal of this section is to give a brief introduction to three.js. We will start by setting up a scene, with a spinning cube. A working example is provided at the bottom of the page in case you get stuck and need help.</p>
+
+		<h2>Before we start</h2>
+
+		<p>Before you can use three.js, you need somewhere to display it. Save the following HTML to a file on your computer, along with a copy of [link:https://threejs.org/build/three.js three.js] in the js/ directory, and open it in your browser.</p>
+
+		<code>
+		&lt;!DOCTYPE html&gt;<br/>
+		&lt;html&gt;<br/>
+			&lt;head&gt;<br/>
+				&lt;meta charset="utf-8"&gt;<br/>
+				&lt;title&gt;My first three.js app&lt;/title&gt;
+				&lt;style&gt;<br/>
+					body { margin: 0; }<br/>
+				&lt;/style&gt;<br/>
+			&lt;/head&gt;<br/>
+			&lt;body&gt;<br/>
+				&lt;script src="js/three.js"&gt;&lt;/script&gt;<br/>
+				&lt;script&gt;<br/>
+					// Our Javascript will go here.<br/>
+				&lt;/script&gt;<br/>
+			&lt;/body&gt;<br/>
+		&lt;/html&gt;<br/>
+		</code>
+
+		<p>That's all. All the code below goes into the empty &lt;script&gt; tag.</p>
+
+		<h2>Creating the scene</h2>
+
+		<p>To actually be able to display anything with three.js, we need three things: scene, camera and renderer, so that we can render the scene with camera.</p>
+
+		<code>
+		const scene = new THREE.Scene();<br/>
+		const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );<br/>
+<br/>
+		const renderer = new THREE.WebGLRenderer();<br/>
+		renderer.setSize( window.innerWidth, window.innerHeight );<br/>
+		document.body.appendChild( renderer.domElement );<br/>
+		</code>
+
+		<p>Let's take a moment to explain what's going on here. We have now set up the scene, our camera and the renderer.</p>
+
+		<p>There are a few different cameras in three.js. For now, let's use a <strong>PerspectiveCamera</strong>.</p>
+
+		<p>The first attribute is the <strong>field of view</strong>. FOV is the extent of the scene that is seen on the display at any given moment. The value is in degrees.</p>
+
+		<p>The second one is the <strong>aspect ratio</strong>. You almost always want to use the width of the element divided by the height, or you'll get the same result as when you play old movies on a widescreen TV - the image looks squished.</p>
+
+		<p>The next two attributes are the <strong>near</strong> and <strong>far</strong> clipping plane. What that means, is that objects further away from the camera than the value of <strong>far</strong> or closer than <strong>near</strong> won't be rendered. You don't have to worry about this now, but you may want to use other values in your apps to get better performance.</p>
+
+		<p>Next up is the renderer. This is where the magic happens. In addition to the WebGLRenderer we use here, three.js comes with a few others, often used as fallbacks for users with older browsers or for those who don't have WebGL support for some reason.</p>
+
+		<p>In addition to creating the renderer instance, we also need to set the size at which we want it to render our app. It's a good idea to use the width and height of the area we want to fill with our app - in this case, the width and height of the browser window. For performance intensive apps, you can also give <strong>setSize</strong> smaller values, like <strong>window.innerWidth/2</strong> and <strong>window.innerHeight/2</strong>, which will make the app render at quarter size.</p>
+
+		<p>If you wish to keep the size of your app but render it at a lower resolution, you can do so by calling <strong>setSize</strong> with false as <strong>updateStyle</strong> (the third argument). For example, <strong>setSize(window.innerWidth/2, window.innerHeight/2, false)</strong> will render your app at half resolution, given that your &lt;canvas&gt; has 100% width and height.</p>
+
+		<p>Last but not least, we add the <strong>renderer</strong> element to our HTML document. This is a &lt;canvas&gt; element the renderer uses to display the scene to us.</p>
+
+		<p><em>"That's all good, but where's that cube you promised?"</em> Let's add it now.</p>
+
+		<code>
+		const geometry = new THREE.BoxGeometry();<br/>
+		const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );<br/>
+		const cube = new THREE.Mesh( geometry, material );<br/>
+		scene.add( cube );<br/>
+<br/>
+		camera.position.z = 5;<br/>
+		</code>
+
+		<p>To create a cube, we need a <strong>BoxGeometry</strong>. This is an object that contains all the points (<strong>vertices</strong>) and fill (<strong>faces</strong>) of the cube. We'll explore this more in the future.</p>
+
+		<p>In addition to the geometry, we need a material to color it. Three.js comes with several materials, but we'll stick to the <strong>MeshBasicMaterial</strong> for now. All materials take an object of properties which will be applied to them. To keep things very simple, we only supply a color attribute of <strong>0x00ff00</strong>, which is green. This works the same way that colors work in CSS or Photoshop (<strong>hex colors</strong>).</p>
+
+		<p>The third thing we need is a <strong>Mesh</strong>. A mesh is an object that takes a geometry, and applies a material to it, which we then can insert to our scene, and move freely around.</p>
+
+		<p>By default, when we call <strong>scene.add()</strong>, the thing we add will be added to the coordinates <strong>(0,0,0)</strong>. This would cause both the camera and the cube to be inside each other. To avoid this, we simply move the camera out a bit.</p>
+
+		<h2>Rendering the scene</h2>
+
+		<p>If you copied the code from above into the HTML file we created earlier, you wouldn't be able to see anything. This is because we're not actually rendering anything yet. For that, we need what's called a <strong>render or animate loop</strong>.</p>
+
+		<code>
+		function animate() {<br/>
+			requestAnimationFrame( animate );<br/>
+			renderer.render( scene, camera );<br/>
+		}<br/>
+		animate();<br/>
+		</code>
+
+		<p>This will create a loop that causes the renderer to draw the scene every time the screen is refreshed (on a typical screen this means 60 times per second). If you're new to writing games in the browser, you might say <em>"why don't we just create a setInterval ?"</em> The thing is - we could, but <strong>requestAnimationFrame</strong> has a number of advantages. Perhaps the most important one is that it pauses when the user navigates to another browser tab, hence not wasting their precious processing power and battery life.</p>
+
+		<h2>Animating the cube</h2>
+
+		<p>If you insert all the code above into the file you created before we began, you should see a green box. Let's make it all a little more interesting by rotating it.</p>
+
+		<p>Add the following right above the <strong>renderer.render</strong> call in your <strong>animate</strong> function:</p>
+
+		<code>
+		cube.rotation.x += 0.01;<br/>
+		cube.rotation.y += 0.01;<br/>
+		</code>
+
+		<p>This will be run every frame (normally 60 times per second), and give the cube a nice rotation animation. Basically, anything you want to move or change while the app is running has to go through the animate loop. You can of course call other functions from there, so that you don't end up with an <strong>animate</strong> function that's hundreds of lines.</p>
+
+		<h2>The result</h2>
+		<p>Congratulations! You have now completed your first three.js application. It's simple, but you have to start somewhere.</p>
+
+		<p>The full code is available below and as an editable [link:https://jsfiddle.net/fxurzeb4/ live example]. Play around with it to get a better understanding of how it works.</p>
+
+		<code>
+		&lt;!DOCTYPE html&gt;<br/>
+		&lt;html&gt;<br/><br/>
+			&lt;head&gt;<br/>
+				&lt;meta charset="utf-8"&gt;<br/>
+				&lt;title&gt;My first three.js app&lt;/title&gt;<br/>
+				&lt;style&gt;<br/>
+					body { margin: 0; }<br/>
+				&lt;/style&gt;<br/>
+			&lt;/head&gt;<br/>
+			&lt;body&gt;<br/>
+				&lt;script src="js/three.js"&gt;&lt;/script&gt;<br/>
+				&lt;script&gt;<br/>
+					const scene = new THREE.Scene();<br/>
+					const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );<br/>
+<br/>
+					const renderer = new THREE.WebGLRenderer();<br/>
+					renderer.setSize( window.innerWidth, window.innerHeight );<br/>
+					document.body.appendChild( renderer.domElement );<br/>
+<br/>
+					const geometry = new THREE.BoxGeometry();<br/>
+					const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );<br/>
+					const cube = new THREE.Mesh( geometry, material );<br/>
+					scene.add( cube );<br/>
+<br/>
+					camera.position.z = 5;<br/>
+<br/>
+					const animate = function () {<br/>
+						requestAnimationFrame( animate );<br/>
+<br/>
+						cube.rotation.x += 0.01;<br/>
+						cube.rotation.y += 0.01;<br/>
+<br/>
+						renderer.render( scene, camera );<br/>
+					};<br/>
+<br/>
+					animate();<br/>
+				&lt;/script&gt;<br/>
+			&lt;/body&gt;<br/>
+		&lt;/html&gt;<br/>
+		</code>
+		<h1>[name]</h1>
+		<div>
+			<p>
+				There are often times when you might need to use text in your three.js application - here are
+				a couple of ways that you can do so.
+			</p>
+		</div>
+
+		<h2>1. DOM + CSS</h2>
+		<div>
+			<p>
+				Using HTML is generally the easiest and fastest manner to add text. This is the method
+				used for descriptive overlays in most three.js examples.
+			</p>
+			<p>You can add content to a</p>
+			<code>&lt;div id="info"&gt;Description&lt;/div&gt;</code>
+
+			<p>
+				and use CSS markup to position absolutely at a position above all others with a
+				z-index especially if you are running three.js full screen.
+			</p>
+
+			<code>
+#info {<br/>
+	position: absolute;<br/>
+	top: 10px;<br/>
+	width: 100%;<br/>
+	text-align: center;<br/>
+	z-index: 100;<br/>
+	display:block;<br/>
+}<br/>
+			</code>
+
+		</div>
+
+
+
+		<h2>2. Draw text to canvas and use as a [page:Texture]</h2>
+		<div>
+			<p>Use this method if you wish to draw text easily on a plane in your three.js scene.</p>
+		</div>
+
+
+		<h2>3. Create a model in your favourite 3D application and export to three.js</h2>
+		<div>
+			<p>Use this method if you prefer working with your 3d applications and importing the models to three.js</p>
+		</div>
+
+
+
+		<h2>4. Procedural Text Geometry</h2>
+		<div>
+			<p>
+				If you prefer to work purely in THREE.js or to create procedural and dynamic 3D
+				text geometries, you can create a mesh whose geometry is an instance of THREE.TextGeometry:
+			</p>
+			<p>
+				<code>new THREE.TextGeometry( text, parameters );</code>
+			</p>
+			<p>
+				In order for this to work, however, your TextGeometry will need an instance of THREE.Font
+				to be set on its "font" parameter.
+
+				See the [page:TextGeometry] page for more info on how this can be done, descriptions of each
+				accepted parameter, and a list of the JSON fonts that come with the THREE.js distribution itself.
+			</p>
+
+			<h3>Examples</h3>
+
+			<p>
+				[example:webgl_geometry_text WebGL / geometry / text]<br />
+				[example:webgl_shadowmap WebGL / shadowmap]
+			</p>
+
+			<p>
+				If Typeface is down, or you want to use a font that is not there, there's a tutorial
+				with a python script for blender that allows you to export text to Three.js's JSON format:
+				[link:http://www.jaanga.com/2012/03/blender-to-threejs-create-3d-text-with.html]
+			</p>
+
+		</div>
+
+
+
+		<h2>5. Bitmap Fonts</h2>
+		<div>
+			<p>
+				BMFonts (bitmap fonts) allow batching glyphs into a single BufferGeometry. BMFont rendering
+				supports word-wrapping, letter spacing, kerning, signed distance fields with standard
+				derivatives, multi-channel signed distance fields, multi-texture fonts, and more.
+				See [link:https://github.com/felixmariotto/three-mesh-ui three-mesh-ui] or [link:https://github.com/Jam3/three-bmfont-text three-bmfont-text].
+			</p>
+			<p>
+				Stock fonts are available in projects like
+				[link:https://github.com/etiennepinchon/aframe-fonts A-Frame Fonts], or you can create your own
+				from any .TTF font, optimizing to include only characters required for a project.
+			</p>
+			<p>
+				Some helpful tools:
+			</p>
+			<ul>
+				<li>[link:http://msdf-bmfont.donmccurdy.com/ msdf-bmfont-web] <i>(web-based)</i></li>
+				<li>[link:https://github.com/soimy/msdf-bmfont-xml msdf-bmfont-xml] <i>(commandline)</i></li>
+				<li>[link:https://github.com/libgdx/libgdx/wiki/Hiero hiero] <i>(desktop app)</i></li>
+			</ul>
+		</div>
+
+
+		<h2>6. Troika Text</h2>
+		<div>
+			<p>
+				The [link:https://www.npmjs.com/package/troika-three-text troika-three-text] package renders 
+				quality antialiased text using a similar technique as BMFonts, but works directly with any .TTF 
+				or .WOFF font file so you don't have to pregenerate a glyph texture offline. It also adds 
+				capabilities including:
+			</p>
+			<ul>
+				<li>Effects like strokes, drop shadows, and curvature</li>
+				<li>The ability to apply any three.js Material, even a custom ShaderMaterial</li>
+				<li>Support for font ligatures, scripts with joined letters, and right-to-left/bidirectional layout</li>
+				<li>Optimization for large amounts of dynamic text, performing most work off the main thread in a web worker</li>
+			</ul>
+		</div>
+
+
+		<h1>[name]</h1>
+		<div>
+			<p>
+				Let's say you want to draw a line or a circle, not a wireframe [page:Mesh].
+				First we need to set up the [page:WebGLRenderer renderer], [page:Scene scene] and camera (see the Creating a scene page).
+			</p>
+
+			<p>Here is the code that we will use:</p>
+			<code>
+const renderer = new THREE.WebGLRenderer();<br/>
+renderer.setSize( window.innerWidth, window.innerHeight );<br/>
+document.body.appendChild( renderer.domElement );<br/>
+<br/>
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 500 );<br/>
+camera.position.set( 0, 0, 100 );<br/>
+camera.lookAt( 0, 0, 0 );<br/>
+<br/>
+const scene = new THREE.Scene();<br/>
+			</code>
+			<p>Next thing we will do is define a material. For lines we have to use [page:LineBasicMaterial] or [page:LineDashedMaterial].</p>
+			<code>
+//create a blue LineBasicMaterial<br/>
+const material = new THREE.LineBasicMaterial( { color: 0x0000ff } );<br/>
+			</code>
+
+			<p>
+				After material we will need a geometry with some vertices:
+			</p>
+
+			<code>
+const points = [];<br/>
+points.push( new THREE.Vector3( - 10, 0, 0 ) );<br/>
+points.push( new THREE.Vector3( 0, 10, 0 ) );<br/>
+points.push( new THREE.Vector3( 10, 0, 0 ) );<br/>
+<br/>
+const geometry = new THREE.BufferGeometry().setFromPoints( points );<br/>
+			</code>
+
+			<p>Note that lines are drawn between each consecutive pair of vertices, but not between the first and last (the line is not closed.)</p>
+
+			<p>Now that we have points for two lines and a material, we can put them together to form a line.</p>
+			<code>
+const line = new THREE.Line( geometry, material );
+			</code>
+			<p>All that's left is to add it to the scene and call [page:WebGLRenderer.render render].</p>
+
+			<code>
+scene.add( line );<br/>
+renderer.render( scene, camera );<br/>
+			</code>
+
+			<p>You should now be seeing an arrow pointing upwards, made from two blue lines.</p>
+		</div>
+		<h1>[name]</h1>
+
+		<h2>Which 3D model format is best supported?</h2>
+		<div>
+			<p>
+				The recommended format for importing and exporting assets is glTF (GL Transmission Format). Because glTF is focused on runtime asset delivery, it is compact to transmit and fast to load.
+			</p>
+			<p>
+				three.js provides loaders for many other popular formats like FBX, Collada or OBJ as well. Nevertheless, you should always try to establish a glTF based workflow in your projects first. For more information, see [link:#manual/introduction/Loading-3D-models loading 3D models].
+			</p>
+		</div>
+
+		<h2>Why are there meta viewport tags in examples?</h2>
+		<div>
+				<code>&lt;meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"&gt;</code>
+
+				<p>These tags control viewport size and scale for mobile browsers (where page content may be rendered at different size than visible viewport).</p>
+
+				<p>[link:https://developer.apple.com/library/content/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html Safari: Using the Viewport]</p>
+
+				<p>[link:https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag MDN: Using the viewport meta tag]</p>
+		</div>
+
+		<h2>How can scene scale be preserved on resize?</h2>
+		<p>
+			We want all objects, regardless of their distance from the camera, to appear the same size, even as the window is resized.
+
+			The key equation to solving this is this formula for the visible height at a given distance:
+
+			<code>
+visible_height = 2 * Math.tan( ( Math.PI / 180 ) * camera.fov / 2 ) * distance_from_camera;
+			</code>
+			If we increase the window height by a certain percentage, then what we want is the visible height at all distances
+			to increase by the same percentage.
+
+			This can not be done by changing the camera position. Instead you have to change the camera field-of-view.
+			[link:http://jsfiddle.net/Q4Jpu/ Example].
+		</p>
+
+		<h2>Why is part of my object invisible?</h2>
+		<p>
+			This could be because of face culling. Faces have an orientation that  decides which side is which. And the culling removes the backside in normal circumstances. To see if this is your problem, change the material side to THREE.DoubleSide.
+			<code>material.side = THREE.DoubleSide</code>
+		</p>
+	<h1>[name]</h1>
+
+	<p>
+		This guide provides a brief overview of the basic components of a web-based VR application
+		made with three.js.
+	</p>
+
+	<h2>Workflow</h2>
+
+	<p>
+		First, you have to include [link:https://github.com/mrdoob/three.js/blob/master/examples/jsm/webxr/VRButton.js VRButton.js]
+		into your project.
+	</p>
+
+	<code>
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+	</code>
+
+	<p>
+		*VRButton.createButton()* does two important things: It creates a button which indicates
+		VR compatibility. Besides, it initiates a VR session if the user activates the button. The only thing you have
+		to do is to add the following line of code to your app.
+	</p>
+
+	<code>
+document.body.appendChild( VRButton.createButton( renderer ) );
+	</code>
+
+	<p>
+		Next, you have to tell your instance of *WebGLRenderer* to enable XR rendering.
+	</p>
+
+	<code>
+renderer.xr.enabled = true;
+	</code>
+
+	<p>
+		Finally, you have to adjust your animation loop since we can't use our well known
+		*window.requestAnimationFrame()* function. For VR projects we use [page:WebGLRenderer.setAnimationLoop setAnimationLoop].
+		The minimal code looks like this:
+	</p>
+
+	<code>
+        renderer.setAnimationLoop( function () { <br/>
+<br/>
+	renderer.render( scene, camera );<br/>
+<br/>
+} );<br/>
+	</code>
+
+	<h2>Next Steps</h2>
+
+	<p>
+		Have a look at one of the official WebVR examples to see this workflow in action.<br /><br />
+
+		[example:webxr_vr_ballshooter WebXR / VR / ballshooter]<br />
+		[example:webxr_vr_cubes WebXR / VR / cubes]<br />
+		[example:webxr_vr_dragging WebXR / VR / dragging]<br />
+		[example:webxr_vr_paint WebXR / VR / paint]<br />
+		[example:webxr_vr_panorama_depth WebXR / VR / panorama_depth]<br />
+		[example:webxr_vr_panorama WebXR / VR / panorama]<br />
+		[example:webxr_vr_rollercoaster WebXR / VR / rollercoaster]<br />
+		[example:webxr_vr_sandbox WebXR / VR / sandbox]<br />
+		[example:webxr_vr_sculpt WebXR / VR / sculpt]<br />
+		[example:webxr_vr_video WebXR / VR / video]
+	</p>
+
+	<h1>[name]</h1>
+
+	<p>
+		One important aspect in order to improve performance and avoid memory leaks in your application is the disposal of unused library entities.
+		Whenever you create an instance of a *three.js* type, you allocate a certain amount of memory. However, *three.js* creates for specific objects
+		like geometries or materials WebGL related entities like buffers or shader programs which are necessary for rendering. It's important to
+		highlight that these objects are not released automatically. Instead, the application has to use a special API in order to free such resources.
+		This guide provides a brief overview about how this API is used and what objects are relevant in this context.
+	</p>
+
+	<h2>Geometries</h2>
+
+	<p>
+		A geometry usually represents vertex information defined as a collection of attributes. *three.js* internally creates an object of type [link:https://developer.mozilla.org/en-US/docs/Web/API/WebGLBuffer WebGLBuffer]
+		for each attribute. These entities are only deleted if you call [page:BufferGeometry.dispose](). If a geometry becomes obsolete in your application,
+		execute the method to free all related resources.
+	</p>
+
+	<h2>Materials</h2>
+
+	<p>
+		A material defines how objects are rendered. *three.js* uses the information of a material definition in order to construct a shader program for rendering.
+		Shader programs can only be deleted if the respective material is disposed. For performance reasons, *three.js* tries to reuse existing
+		shader programs if possible. So a shader program is only deleted if all related materials are disposed. You can indicate the disposal of a material by
+		executing [page:Material.dispose]().
+	</p>
+
+	<h2>Textures</h2>
+
+	<p>
+		The disposal of a material has no effect on textures. They are handled separately since a single texture can be used by multiple materials at the same time.
+		Whenever you create an instance of [page:Texture], three.js internally creates an instance of [link:https://developer.mozilla.org/en-US/docs/Web/API/WebGLTexture WebGLTexture].
+		Similar to buffers, this object can only be deleted by calling [page:Texture.dispose]().
+	</p>
+
+	<h2>Render Targets</h2>
+
+	<p>
+		Objects of type [page:WebGLRenderTarget] not only allocate an instance of [link:https://developer.mozilla.org/en-US/docs/Web/API/WebGLTexture WebGLTexture] but also
+		[link:https://developer.mozilla.org/en-US/docs/Web/API/WebGLFramebuffer WebGLFramebuffer]s and [link:https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderbuffer WebGLRenderbuffer]s
+		for realizing custom rendering destinations. These objects are only deallocated by executing [page:WebGLRenderTarget.dispose]().
+	</p>
+
+	<h2>Miscellaneous</h2>
+
+	<p>
+		There are other classes from the examples directory like controls or post processing passes which provide *dispose()* methods in order to remove internal event listeners
+		or render targets. In general, it's recommended to check the API or documentation of a class and watch for *dispose()*. If present, you should use it when cleaning things up.
+	</p>
+
+	<h2>FAQ</h2>
+
+	<h3>Why can't *three.js* dispose objects automatically?</h3>
+
+	<p>
+		This question was asked many times by the community so it's important to clarify this matter. Fact is that *three.js* does not know the lifetime or scope
+		of user-created entities like geometries or materials. This is the responsibility of the application. For example even if a material is currently not used for rendering,
+		it might be necessary for the next frame. So if the application decides that a certain object can be deleted, it has to	notify the engine via calling the respective
+		*dispose()* method.
+	</p>
+
+	<h3>Does removing a mesh from the scene also dispose its geometry and material?</h3>
+
+	<p>
+		No, you have to explicitly dispose the geometry and material via *dispose()*. Keep in mind that geometries and materials can be shared among 3D objects like meshes.
+	</p>
+
+	<h3>Does *three.js* provide information about the amount of cached objects?</h3>
+
+	<p>
+		Yes. It's possible to evaluate [page:WebGLRenderer.info], a special property of the renderer with a series of statistical information about the graphics board memory
+		and the rendering process. Among other things, it tells you how many textures, geometries and shader programs are internally stored. If you notice performance problems
+		in your application, it's a good idea to debug this property in order to easily identify a memory leak.
+	</p>
+
+	<h3>What happens when you call *dispose()* on a texture but the image is not loaded yet?</h3>
+
+	<p>
+		Internal resources for a texture are only allocated if the image has fully loaded. If you dispose a texture before the image was loaded,
+		nothing happens. No resources were allocated so there is also no need for clean up.
+	</p>
+
+	<h3>What happens when I call *dispose()* and then use the respective object at a later point?</h3>
+
+	<p>
+		The deleted internal resources will be created again by the engine. So no runtime error will occur but you might notice a negative performance impact for the current frame,
+		especially when shader programs have to be compiled.
+	</p>
+
+	<h3>How should I manage *three.js* objects in my app? When do I know how to dispose things?</h3>
+
+	<p>
+		In general, there is no definite recommendation for this. It highly depends on the specific use case when calling *dispose()* is appropriate. It's important to highlight that
+		it's not always necessary to dispose objects all the time. A good example for this is a game which consists of multiple levels. A good place for object disposal is when
+		switching the level. The app could traverse through the old scene and dispose all obsolete materials, geometries and textures. As mentioned in the previous section, it does not
+		produce a runtime error if you dispose an object that is actually still in use. The worst thing that can happen is performance drop for a single frame.
+	</p>
+
+	<h2>Examples that demonstrate the usage of dispose()</h2>
+
+	<p>
+		[example:webgl_test_memory WebGL / test / memory]<br />
+		[example:webgl_test_memory2 WebGL / test / memory2]<br />
+	</p>
+
+		<h1>[name]</h1>
+		<p>
+			If you use just procedural geometries and don't load any textures, webpages should work
+			straight from the file system, just double-click on HTML file in a file manager and it
+			should appear working in the browser (you'll see <em>file:///yourFile.html</em> in the address bar).
+		</p>
+
+		<h2>Content loaded from external files</h2>
+		<div>
+			<p>
+				If you load models or textures from external files, due to browsers' [link:http://en.wikipedia.org/wiki/Same_origin_policy same origin policy]
+			 	security restrictions, loading from a file system will fail with a security exception.
+		 	</p>
+
+			<p>There are two ways to solve this:</p>
+
+			<ol>
+				<li>
+					Change security for local files in a browser. This allows you to access your page as: <code>file:///yourFile.html</code>
+				</li>
+				<li>
+					Run files from a local web server. This allows you to access your page as: <code>http://localhost/yourFile.html</code>
+				</li>
+			</ol>
+
+			<p>
+				If you use option 1, be aware that you may open yourself to some vulnerabilities if using
+				the same browser for a regular web surfing. You may want to create a separate browser
+				profile / shortcut used just for local development to be safe. Let's go over each option in turn.
+			</p>
+		</div>
+
+
+		<h2>Run a local server</h2>
+		<div>
+			<p>
+				Many programming languages have simple HTTP servers built in. They are not as full featured as
+				production servers such as [link:https://www.apache.org/ Apache] or [link:https://nginx.org NGINX], however they should be sufficient for testing your
+				three.js application.
+			</p>
+			
+			<h3>Plugins for popular code editors</h3>
+			<div>
+				<p>Some code editors have plugins which will spawn a simple server on demand.</p>
+				<ul>
+					<li>[link:https://marketplace.visualstudio.com/items?itemName=yandeu.five-server Five Server] for Visual Studio Code.</li>
+					<li>[link:https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer Live Server] for Visual Studio Code.</li>
+					<li>[link:https://atom.io/packages/atom-live-server Live Server] for Atom.</li>
+				</ul>
+			</div>
+
+			<h3>Servez</h3>
+			<div>
+				<p>
+					[link:https://greggman.github.io/servez Servez] is a simple server with a GUI.
+				</p>
+			</div>
+
+			<h3>Node.js five-server</h3>
+			<div>
+				<p>Development server with live reload capability. To install:</p>
+				<code>
+# Remove live-server (if you have it)
+npm -g rm live-server
+
+# Install five-server
+npm -g i five-server
+
+# Update five-server (from time to time)
+npm -g i five-server@latest
+				</code>
+
+				<p>To run (from your local directory):</p>
+				<code>five-server . -p 8000</code>
+			</div>
+
+			<h3>Node.js http-server</h3>
+			<div>
+				<p>Node.js has a simple HTTP server package. To install:</p>
+				<code>npm install http-server -g</code>
+
+				<p>To run (from your local directory):</p>
+				<code>http-server . -p 8000</code>
+			</div>
+
+			<h3>Python server</h3>
+			<div>
+				<p>
+					If you have [link:http://python.org/ Python] installed, it should be enough to run this
+					from a command line (from your working directory):
+				</p>
+				<code>
+//Python 2.x
+python -m SimpleHTTPServer
+
+//Python 3.x
+python -m http.server
+				</code>
+
+				<p>This will serve files from the current directory at localhost under port 8000, i.e in the address bar type:</p>
+
+				<code>http://localhost:8000/</code>
+			</div>
+
+			<h3>Ruby server</h3>
+			<div>
+				<p>If you have Ruby installed, you can get the same result running this instead:</p>
+				<code>
+ruby -r webrick -e "s = WEBrick::HTTPServer.new(:Port => 8000, :DocumentRoot => Dir.pwd); trap('INT') { s.shutdown }; s.start"
+				</code>
+			</div>
+
+			<h3>PHP server</h3>
+			<div>
+				<p>PHP also has a built-in web server, starting with php 5.4.0:</p>
+				<code>php -S localhost:8000</code>
+			</div>
+
+			<h3>Lighttpd</h3>
+			<div>
+				<p>
+					Lighttpd is a very lightweight general purpose webserver. We'll cover installing it on OSX with
+					HomeBrew here. Unlike the other servers discussed here, lighttpd is a full fledged production
+					ready server.
+				</p>
+
+				<ol>
+					<li>
+						Install it via homebrew
+						<code>brew install lighttpd</code>
+					</li>
+					<li>
+						Create a configuration file called lighttpd.conf in the directory where you want to run
+						your webserver. There is a sample [link:http://redmine.lighttpd.net/projects/lighttpd/wiki/TutorialConfiguration here].
+					 </li>
+					<li>
+						In the conf file, change the server.document-root to the directory you want to serve files from.
+					</li>
+					<li>
+						Start it with
+						<code>lighttpd -f lighttpd.conf</code>
+					</li>
+					<li>
+						Navigate to http://localhost:3000/ and it will serve static files from the directory you
+						chose.
+					</li>
+				</ol>
+			</div>
+			<h3>IIS</h3>
+			<div>
+				<p>If you are using Microsoft IIS as web server. Please add a MIME type settings regarding .fbx extension before loading.</p>
+				<code>File name extension: fbx        MIME Type: text/plain</code>
+				<p>By default, IIS blocks .fbx, .obj files downloads. You have to configure IIS to enable these kind of files can be download.</p>
+			</div>
+			<p>
+				Other simple alternatives are [link:http://stackoverflow.com/q/12905426/24874 discussed here]
+				on Stack Overflow.
+			</p>
+		</div>
+
+		<h1>[name]</h1>
+		<div>
+			<p>All objects by default automatically update their matrices if they have been added to the scene with</p>
+			<code>
+const object = new THREE.Object3D();
+scene.add( object );
+			</code>
+			or if they are the child of another object that has been added to the scene:
+			<code>
+const object1 = new THREE.Object3D();
+const object2 = new THREE.Object3D();
+
+object1.add( object2 );
+scene.add( object1 ); //object1 and object2 will automatically update their matrices
+			</code>
+		</div>
+
+		<p>However, if you know the object will be static, you can disable this and update the transform matrix manually just when needed.</p>
+
+		<code>
+object.matrixAutoUpdate  = false;
+object.updateMatrix();
+		</code>
+
+		<h2>BufferGeometry</h2>
+		<div>
+			<p>
+				BufferGeometries store information (such as vertex positions, face indices, normals, colors,
+				UVs, and any custom attributes) in [page:BufferAttribute buffers] - that is,
+				[link:https://developer.mozilla.org/en-US/docs/Web/JavaScript/Typed_arrays typed arrays].
+				This makes them generally faster than standard Geometries, at the cost of being somewhat harder to
+				work with.
+			</p>
+			<p>
+				With regards to updating BufferGeometries, the most important thing to understand is that
+				you cannot resize buffers (this is very costly,	basically the equivalent to creating a new geometry).
+				You can however update the content of buffers.
+			</p>
+			<p>
+				This means that if you know an attribute of your BufferGeometry will grow, say the number of vertices,
+				you must pre-allocate a buffer large enough to hold any new vertices that may be created. Of
+				course, this also means that there will be a maximum size for your BufferGeometry - there is
+				no way to create a BufferGeometry that can efficiently be extended indefinitely.
+			</p>
+			<p>
+				We'll use the example of a line that gets extended at render time. We'll allocate space
+				in the buffer for 500 vertices but draw only two at first, using [page:BufferGeometry.drawRange].
+			</p>
+			<code>
+const MAX_POINTS = 500;
+
+// geometry
+const geometry = new THREE.BufferGeometry();
+
+// attributes
+const positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
+geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+// draw range
+const drawCount = 2; // draw the first 2 points, only
+geometry.setDrawRange( 0, drawCount );
+
+// material
+const material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+
+// line
+const line = new THREE.Line( geometry,  material );
+scene.add( line );
+			</code>
+		 	<p>
+				Next we'll randomly add points to the line using a pattern like:
+			</p>
+			<code>
+const positions = line.geometry.attributes.position.array;
+
+let x, y, z, index;
+x = y = z = index = 0;
+
+for ( let i = 0, l = MAX_POINTS; i < l; i ++ ) {
+
+    positions[ index ++ ] = x;
+    positions[ index ++ ] = y;
+    positions[ index ++ ] = z;
+
+    x += ( Math.random() - 0.5 ) * 30;
+    y += ( Math.random() - 0.5 ) * 30;
+    z += ( Math.random() - 0.5 ) * 30;
+
+}
+			</code>
+			<p>
+				If you want to change the <em>number of points</em> rendered after the first render, do this:
+			</p>
+			<code>
+line.geometry.setDrawRange( 0, newValue );
+			</code>
+			<p>
+				If you want to change the position data values after the first render, you need to
+				set the needsUpdate flag like so:
+			</p>
+			<code>
+line.geometry.attributes.position.needsUpdate = true; // required after the first render
+			</code>
+
+			<p>
+				If you change the position data values after the initial render, you may need to recompute
+				bounding volumes so other features of the engine like view frustum culling or helpers properly work.
+			</p>
+			<code>
+line.geometry.computeBoundingBox();
+line.geometry.computeBoundingSphere();
+			</code>
+
+			<p>
+				[link:https://jsfiddle.net/xvnctbL0/2/ Here is a fiddle] showing an animated line which you can adapt to your use case.
+			</p>
+
+			<h3>Examples</h3>
+
+			<p>
+				[example:webgl_custom_attributes WebGL / custom / attributes]<br />
+				[example:webgl_buffergeometry_custom_attributes_particles WebGL / buffergeometry / custom / attributes / particles]
+			</p>
+
+		</div>
+
+		<h2>Materials</h2>
+		<div>
+			<p>All uniforms values can be changed freely (e.g. colors, textures, opacity, etc), values are sent to the shader every frame.</p>
+
+			<p>Also GLstate related parameters can change any time (depthTest, blending, polygonOffset, etc).</p>
+
+			<p>The following properties can't be easily changed at runtime (once the material is rendered at least once):</p>
+			<ul>
+				<li>numbers and types of uniforms</li>
+				<li>presence or not of
+					<ul>
+						<li>texture</li>
+						<li>fog</li>
+						<li>vertex colors</li>
+						<li>morphing</li>
+						<li>shadow map</li>
+						<li>alpha test</li>
+					</ul>
+				</li>
+			</ul>
+
+			<p>Changes in these require building of new shader program. You'll need to set</p>
+			<code>material.needsUpdate = true</code>
+
+			<p>Bear in mind this might be quite slow and induce jerkiness in framerate (especially on Windows, as shader compilation is slower in DirectX than OpenGL).</p>
+
+			<p>For smoother experience you can emulate changes in these features to some degree by having "dummy" values like zero intensity lights, white textures, or zero density fog.</p>
+
+			<p>You can freely change the material used for geometry chunks, however you cannot change how an object is divided into chunks (according to face materials). </p>
+
+			<h3>If you need to have different configurations of materials during runtime:</h3>
+			<p>If the number of materials / chunks is small, you could pre-divide the object beforehand (e.g. hair / face / body / upper clothes / trousers for a human, front / sides / top / glass / tire / interior for a car). </p>
+
+			<p>If the number is large (e.g. each face could be potentially different), consider a different solution, such as using attributes / textures to drive different per-face look.</p>
+
+			<h3>Examples</h3>
+			<p>
+				[example:webgl_materials_car WebGL / materials / car]<br />
+				[example:webgl_postprocessing_dof WebGL / webgl_postprocessing / dof]
+			</p>
+		</div>
+
+
+		<h2>Textures</h2>
+		<div>
+			<p>Image, canvas, video and data textures need to have the following flag set if they are changed:</p>
+			<code>
+				texture.needsUpdate = true;
+			</code>
+			<p>Render targets update automatically.</p>
+
+			<h3>Examples</h3>
+			<p>
+				[example:webgl_materials_video WebGL / materials / video]<br />
+				[example:webgl_rtt WebGL / rtt]
+			</p>
+
+		</div>
+
+
+		<h2>Cameras</h2>
+		<div>
+			<p>A camera's position and target is updated automatically. If you need to change</p>
+			<ul>
+				<li>
+					fov
+				</li>
+				<li>
+					aspect
+				</li>
+				<li>
+					near
+				</li>
+				<li>
+					far
+				</li>
+			</ul>
+			<p>
+				then you'll need to recompute the projection matrix:
+			</p>
+			<code>
+camera.aspect = window.innerWidth / window.innerHeight;<br/>
+camera.updateProjectionMatrix();<br/>
+			</code>
+		</div>
+		<h1>How to use post-processing</h1>
+
+		<p>
+			Many three.js applications render their 3D objects directly to the screen. Sometimes, however, you want to apply one or more graphical
+			effects like Depth-Of-Field, Bloom, Film Grain or various types of Anti-aliasing. Post-processing is a widely used approach
+			to implement such effects. First, the scene is rendered to a render target which represents a buffer in the video card's memory.
+			In the next step one or more post-processing passes apply filters and effects to the image buffer before it is eventually rendered to
+			the screen.
+		</p>
+		<p>
+			three.js provides a complete post-processing solution via [page:EffectComposer] to implement such a workflow.
+		</p>
+
+		<h2>Workflow</h2>
+
+		<p>
+			The first step in the process is to import all necessary files from the examples directory. The guide assumes you are using the official
+			[link:https://www.npmjs.com/package/three npm package] of three.js. For our basic demo in this guide we need the following files.
+		</p>
+
+		<code>
+		import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';<br/>
+		import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';<br/>
+		import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';<br/>
+		</code>
+
+		<p>
+			After all files are successfully imported, we can create our composer by passing in an instance of [page:WebGLRenderer].
+		</p>
+
+		<code>
+		const composer = new EffectComposer( renderer );
+		</code>
+
+		<p>
+			When using a composer, it's necessary to change the application's animation loop. Instead of calling the render method of
+			[page:WebGLRenderer], we now use the respective counterpart of [page:EffectComposer].
+		</p>
+
+		<code>
+		function animate() {<br/>
+<br/>
+			requestAnimationFrame( animate );<br/>
+<br/>
+			composer.render();<br/>
+<br/>
+		}<br/>
+		</code>
+
+		<p>
+			Our composer is now ready so it's possible to configure the chain of post-processing passes. These passes are responsible for creating
+			the final visual output of the application. They are processed in order of their addition/insertion. In our example, the instance of *RenderPass*
+			is executed first and then the instance of *GlitchPass*. The last enabled pass in the chain is automatically rendered to the screen. The setup
+			of the passes looks like so:
+		</p>
+
+		<code>
+		const renderPass = new RenderPass( scene, camera );<br/>
+		composer.addPass( renderPass );<br/>
+<br/>
+		const glitchPass = new GlitchPass();<br/>
+		composer.addPass( glitchPass );<br/>
+		</code>
+
+		<p>
+			*RenderPass* is normally placed at the beginning of the chain in order to provide the rendered scene as an input for the next post-processing step. In our case,
+			*GlitchPass* is going to use these image data to apply a wild glitch effect. Check out this [link:https://threejs.org/examples/webgl_postprocessing_glitch live example]
+			to see it in action.
+		</p>
+
+		<h2>Built-in Passes</h2>
+
+		<p>
+			You can use a wide range of pre-defined post-processing passes provided by the engine. They are located in the
+			[link:https://github.com/mrdoob/three.js/tree/dev/examples/jsm/postprocessing postprocessing] directory.
+		</p>
+
+		<h2>Custom Passes</h2>
+
+		<p>
+			Sometimes you want to write a custom post-processing shader and include it into the chain of post-processing passes. For this scenario,
+			you can utilize *ShaderPass*. After importing the file and your custom shader, you can use the following code to setup the pass.
+		</p>
+
+		<code>
+		import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';<br/>
+		import { LuminosityShader } from 'three/examples/jsm/shaders/LuminosityShader.js';<br/>
+<br/>
+		// later in your init routine<br/>
+<br/>
+		const luminosityPass = new ShaderPass( LuminosityShader );<br/>
+		composer.addPass( luminosityPass );<br/>
+		</code>
+
+		<p>
+			The repository provides a file called [link:https://github.com/mrdoob/three.js/blob/master/examples/jsm/shaders/CopyShader.js CopyShader] which is a
+			good starting code for your own custom shader. *CopyShader* just copies the image contents of the [page:EffectComposer]'s read buffer
+			to its write buffer without applying any effects.
+		</p>
+
+		<h1>[name]</h1>
+
+		<p>
+			You can install three.js with [link:https://www.npmjs.com/ npm] and modern build tools, or get started quickly with just static hosting or a CDN. For most users, installing from npm is the best choice.
+		</p>
+
+		<p>
+			Whichever you choose, be consistent and import all files from the same version of the library. Mixing files from different sources may cause duplicate code to be included, or even break the application in unexpected ways.
+		</p>
+
+		<p>
+			All methods of installing three.js depend on ES modules (see [link:https://eloquentjavascript.net/10_modules.html#h_hF2FmOVxw7 Eloquent JavaScript: ECMAScript Modules]), which allow you to include only the parts of the library needed in the final project.
+		</p>
+
+		<h2>Install from npm</h2>
+
+		<p>
+			To install the [link:https://www.npmjs.com/package/three three] npm module, open a terminal window in your project folder and run:
+		</p>
+
+		<code>
+		npm install --save three
+		</code>
+
+		<p>
+			The package will be downloaded and installed. Then you're ready to import it in your code:
+		</p>
+
+		<code>
+		// Option 1: Import the entire three.js core library.<br/>
+		import * as THREE from 'three';<br/>
+<br/>
+		const scene = new THREE.Scene();<br/>
+<br/>
+<br/>
+		// Option 2: Import just the parts you need.<br/>
+		import { Scene } from 'three';<br/>
+<br/>
+		const scene = new Scene();<br/>
+		</code>
+
+		<p>
+			When installing from npm, you'll almost always use some sort of [link:https://eloquentjavascript.net/10_modules.html#h_zWTXAU93DC bundling tool] to combine all of the packages your project requires into a single JavaScript file. While any modern JavaScript bundler can be used with three.js, the most popular choice is [link:https://webpack.js.org/ webpack].
+		</p>
+
+		<p>
+			Not all features are accessed directly through the <em>three</em> module (also called a "bare import"). Other popular parts of the library — such as controls, loaders, and post-processing effects — must be imported from the [link:https://github.com/mrdoob/three.js/tree/dev/examples/jsm examples/jsm] subfolder. To learn more, see <em>Examples</em> below.
+		</p>
+
+		<p>
+			Learn more about npm modules from [link:https://eloquentjavascript.net/20_node.html#h_J6hW/SmL/a Eloquent JavaScript: Installing with npm].
+		</p>
+
+		<h2>Install from CDN or static hosting</h2>
+
+		<p>
+			The three.js library can be used without any build system, either by uploading files to your own web server or by using an existing CDN. Because the library relies on ES modules, any script that references it must use <em>type="module"</em> as shown below:
+		</p>
+
+		<code>
+		&lt;script type="module"&gt;<br/>
+<br/>
+		  // Find the latest version by visiting https://cdn.skypack.dev/three.<br/>
+<br/>
+		  import * as THREE from 'https://cdn.skypack.dev/three@&lt;version&gt;';<br/>
+<br/>
+		  const scene = new THREE.Scene();<br/>
+<br/>
+		&lt;/script&gt;<br/>
+		</code>
+
+		<p>
+			Not all features are accessed through the <em>three</em> entrypoint. Other popular parts of the library — such as controls, loaders, and post-processing effects — must be imported from the [link:https://github.com/mrdoob/three.js/tree/dev/examples/jsm examples/jsm] subfolder. To learn more, see <em>Examples</em> below.
+		</p>
+
+
+		<h2>Examples</h2>
+
+		<p>
+			The core of three.js is focused on the most important components of a 3D engine. Many other useful components — such as controls, loaders, and post-processing effects — are part of the [link:https://github.com/mrdoob/three.js/tree/dev/examples/jsm examples/jsm] directory. They are referred to as "examples," because while you can use them off the shelf, they're also meant to be remixed and customized. These components are always kept in sync with the core library, whereas similar third-party packages on npm are maintained by different people and may not be up to date.
+		</p>
+
+		<p>
+			Examples do not need to be <em>installed</em> separately, but do need to be <em>imported</em> separately. If three.js was installed with npm, you can load the [page:OrbitControls] component with:
+		</p>
+
+
+		<code>
+		import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';<br/>
+<br/>
+		const controls = new OrbitControls();<br/>
+		</code>
+
+		<p>
+			If three.js was installed from a CDN, use the same CDN to install other components:
+		</p>
+
+		<code>
+		&lt;script type="module"&gt;<br/>
+<br/>
+		  // Find the latest version by visiting https://cdn.skypack.dev/three.<br/>
+<br/>
+		  import { OrbitControls } from 'https://cdn.skypack.dev/three@&lt;version&gt;/examples/jsm/controls/OrbitControls.js';<br/>
+<br/>
+		  const controls = new OrbitControls();<br/>
+<br/>
+		&lt;/script&gt;<br/>
+		</code>
+
+		<p>
+			It's important that all files use the same version. Do not import different examples from different versions, or use examples from a different version than the three.js library itself.
+		</p>
+
+		<h2>Compatibility</h2>
+
+		<h3>CommonJS imports</h3>
+
+		<p>
+			While most modern JavaScript bundlers now support ES modules by default, some older build tools might not. In those cases you can likely configure the bundler to understand ES modules: [link:http://browserify.org/ Browserify] just needs the [link:https://github.com/babel/babelify babelify] plugin, for example.
+		</p>
+
+		<h3>Import maps</h3>
+
+		<p>
+			Imported paths differ when installing from npm, as compared to installing from static hosting or a CDN. We're aware that this is an ergonomic issue for both groups of users. Developers with build tools and bundlers prefer bare package specifiers (e.g. 'three') rather than relative paths, and files in the <em>examples/</em> folder use relative references to <em>three.module.js</em> that don't follow this expectation. Those who do not use build tools — for fast prototyping, learning, or personal preference — may similarly dislike those relative imports, which require certain folder structures and are less forgiving than a global <em>THREE.*</em> namespace.
+		</p>
+
+		<p>
+			We hope to remove these relative paths when [link:https://github.com/WICG/import-maps import maps] become broadly available, replacing them with bare package specifiers to the npm package name, 'three'. This matches build tool expectations for npm packages more closely, and allows both groups of users to write exactly the same code when importing a file. For users who prefer to avoid build tools, a simple JSON mapping can direct all imports to a CDN or static file folder. Experimentally, you can try using simpler imports today with an import map polyfill, as shown in our [link:https://glitch.com/edit/#!/three-import-map?path=index.html import map example].
+		</p>
+
+		<h3>Node.js</h3>
+
+		<p>
+			Using three.js in [link:https://eloquentjavascript.net/20_node.html Node.js] can be difficult, for two reasons:
+		</p>
+
+		<p>
+			First, because three.js is built for the web, it depends on browser and DOM APIs that don't always exist in Node.js. Some of these issues can be resolved by using shims like [link:https://github.com/stackgl/headless-gl headless-gl], or by replacing components like [page:TextureLoader] with custom alternatives. Other DOM APIs may be deeply intertwined with the code that uses them, and will be harder to work around. We welcome simple and maintainable pull requests to improve Node.js support, but recommend opening an issue to discuss your improvements first.
+		</p>
+
+		<p>
+			Second, Node.js support for ES modules is ... complicated. As of Node.js v12, the core library can be imported as a CommonJS module, with <em>require('three')</em>. However, most example components in <em>examples/jsm</em> cannot. Future versions of Node.js may resolve this, but in the meantime you may need to use workarounds like [link:https://github.com/standard-things/esm esm] to enable your Node.js application to recognize ES modules.
+		</p>
+
+		<h1>[name]</h1>
+
+		<p class="desc">
+			Listed here are externally developed compatible libraries and plugins for three.js. This
+			list and the associated packages are maintained by the community and not guaranteed
+			to be up to date. If you'd like to update this list make PR!
+		</p>
+
+		<h3>Physics</h3>
+
+		<ul>
+			<li>[link:https://github.com/lo-th/Oimo.js/ Oimo.js]</li>
+			<li>[link:https://enable3d.io/ enable3d]</li>
+			<li>[link:https://github.com/kripken/ammo.js/ ammo.js]</li>
+			<li>[link:https://github.com/pmndrs/cannon-es cannon-es]</li>
+		</ul>
+
+		<h3>Postprocessing</h3>
+		
+		<p>
+			In addition to the [link:https://github.com/mrdoob/three.js/tree/dev/examples/jsm/postprocessing official three.js postprocessing effects],
+			support for some additional effects and frameworks are available through external libraries.
+		</p>
+
+		<ul>
+			<li>[link:https://github.com/vanruesc/postprocessing postprocessing]</li>
+		</ul>
+
+		<h3>Intersection and Raycast Performance</h3>
+		
+		<ul>
+			<li>[link:https://github.com/gkjohnson/three-mesh-bvh three-mesh-bvh]</li>
+		</ul>
+
+		<h3>File Formats</h3>
+
+		<p>
+			In addition to the [link:https://github.com/mrdoob/three.js/tree/dev/examples/jsm/loaders official three.js loaders],
+			support for some additional formats is available through external libraries.
+		</p>
+
+		<ul>
+			<li>[link:https://github.com/gkjohnson/urdf-loaders/tree/master/javascript urdf-loader]</li>
+			<li>[link:https://github.com/NASA-AMMOS/3DTilesRendererJS 3d-tiles-renderer-js]</li>
+			<li>[link:https://github.com/kaisalmen/WWOBJLoader WebWorker OBJLoader]</li>
+			<li>[link:https://github.com/IFCjs/web-ifc-three IFC.js]</li>
+		</ul>
+
+		<h3>Geometry</h3>
+
+		<ul>
+			<li>[link:https://github.com/spite/THREE.MeshLine THREE.MeshLine]</li>
+		</ul>
+
+		<h3>3D Text and Layout</h3>
+
+		<ul>
+			<li>[link:https://github.com/protectwise/troika/tree/master/packages/troika-three-text troika-three-text]</li>
+			<li>[link:https://github.com/felixmariotto/three-mesh-ui three-mesh-ui]</li>
+		</ul>
+
+		<h3>Particle Systems</h3>
+
+		<ul>
+			<li>[link:https://github.com/creativelifeform/three-nebula three-nebula]</li>
+		</ul>
+		
+		<h3>Inverse Kinematics</h3>
+
+		<ul>
+			<li>[link:https://github.com/jsantell/THREE.IK THREE.IK]</li>
+			<li>[link:https://github.com/lo-th/fullik fullik]</li>
+		</ul>
+
+		<h3>Game AI</h3>
+
+		<ul>
+			<li>[link:https://mugen87.github.io/yuka/ yuka]</li>
+			<li>[link:https://github.com/donmccurdy/three-pathfinding three-pathfinding]</li>
+		</ul>
+
+		<h3>Wrappers and Frameworks</h3>
+		
+		<ul>
+			<li>[link:https://aframe.io/ A-Frame]</li>
+			<li>[link:https://github.com/pmndrs/react-three-fiber react-three-fiber]</li>
+			<li>[link:https://github.com/ecsyjs/ecsy-three ECSY]</li>
+		</ul>
+
+	<h1>[name]</h1>
+
+	<p>
+		3D models are available in hundreds of file formats, each with different
+		purposes, assorted features, and varying complexity. Although
+		<a href="https://github.com/mrdoob/three.js/tree/dev/examples/jsm/loaders" target="_blank" rel="noopener">
+		three.js provides many loaders</a>, choosing the right format and
+		workflow will save time and frustration later on. Some formats are
+		difficult to work with, inefficient for realtime experiences, or simply not
+		fully supported at this time.
+	</p>
+
+	<p>
+		This guide provides a workflow recommended for most users, and suggestions
+		for what to try if things don't go as expected.
+	</p>
+
+	<h2>Before we start</h2>
+
+	<p>
+		If you're new to running a local server, begin with
+		[link:#manual/introduction/How-to-run-things-locally how to run things locally]
+		first. Many common errors viewing 3D models can be avoided by hosting files
+		correctly.
+	</p>
+
+	<h2>Recommended workflow</h2>
+
+	<p>
+		Where possible, we recommend using glTF (GL Transmission Format). Both
+		<small>.GLB</small> and <small>.GLTF</small> versions of the format are
+		well supported. Because glTF is focused on runtime asset delivery, it is
+		compact to transmit and fast to load. Features include meshes, materials,
+		textures, skins, skeletons, morph targets, animations, lights, and
+		cameras.
+	</p>
+
+	<p>
+		Public-domain glTF files are available on sites like
+		<a href="https://sketchfab.com/models?features=downloadable&sort_by=-likeCount&type=models" target="_blank" rel="noopener">
+		Sketchfab</a>, or various tools include glTF export:
+	</p>
+
+	<ul>
+		<li><a href="https://www.blender.org/" target="_blank" rel="noopener">Blender</a> by the Blender Foundation</li>
+		<li><a href="https://www.allegorithmic.com/products/substance-painter" target="_blank" rel="noopener">Substance Painter</a> by Allegorithmic</li>
+		<li><a href="https://www.foundry.com/products/modo" target="_blank" rel="noopener">Modo</a> by Foundry</li>
+		<li><a href="https://www.marmoset.co/toolbag/" target="_blank" rel="noopener">Toolbag</a> by Marmoset</li>
+		<li><a href="https://www.sidefx.com/products/houdini/" target="_blank" rel="noopener">Houdini</a> by SideFX</li>
+		<li><a href="https://labs.maxon.net/?p=3360" target="_blank" rel="noopener">Cinema 4D</a> by MAXON</li>
+		<li><a href="https://github.com/KhronosGroup/COLLADA2GLTF" target="_blank" rel="noopener">COLLADA2GLTF</a> by the Khronos Group</li>
+		<li><a href="https://github.com/facebookincubator/FBX2glTF" target="_blank" rel="noopener">FBX2GLTF</a> by Facebook</li>
+		<li><a href="https://github.com/AnalyticalGraphicsInc/obj2gltf" target="_blank" rel="noopener">OBJ2GLTF</a> by Analytical Graphics Inc</li>
+		<li>&hellip;and <a href="http://github.khronos.org/glTF-Project-Explorer/" target="_blank" rel="noopener">many more</a></li>
+	</ul>
+
+	<p>
+		If your preferred tools do not support glTF, consider requesting glTF
+		export from the authors, or posting on
+		<a href="https://github.com/KhronosGroup/glTF/issues/1051" target="_blank" rel="noopener">the glTF roadmap thread</a>.
+	</p>
+
+	<p>
+		When glTF is not an option, popular formats such as FBX, OBJ, or COLLADA
+		are also available and regularly maintained.
+	</p>
+
+	<h2>Loading</h2>
+
+	<p>
+		Only a few loaders (e.g. [page:ObjectLoader]) are included by default with
+		three.js — others should be added to your app individually.
+	</p>
+
+	<code>
+		import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+	</code>
+
+	<p>
+		Once you've imported a loader, you're ready to add a model to your scene. Syntax varies among
+		different loaders — when using another format, check the examples and documentation for that
+		loader. For glTF, usage with global scripts would be:
+	</p>
+
+	<code>
+		const loader = new GLTFLoader();<br/>
+<br/>
+		loader.load( 'path/to/model.glb', function ( gltf ) {<br/>
+<br/>
+			scene.add( gltf.scene );<br/>
+<br/>
+		}, undefined, function ( error ) {<br/>
+<br/>
+			console.error( error );<br/>
+<br/>
+		} );<br/>
+	</code>
+
+	<p>
+		See [page:GLTFLoader GLTFLoader documentation] for further details.
+	</p>
+
+	<h2>Troubleshooting</h2>
+
+	<p>
+		You've spent hours modeling an artisanal masterpiece, you load it into
+		the webpage, and — oh no! 😭 It's distorted, miscolored, or missing entirely.
+		Start with these troubleshooting steps:
+	</p>
+
+	<ol>
+		<li>
+			Check the JavaScript console for errors, and make sure you've used an
+			<em>onError</em> callback when calling <em>.load()</em> to log the result.
+		</li>
+		<li>
+			View the model in another application. For glTF, drag-and-drop viewers
+			are available for
+			<a href="https://gltf-viewer.donmccurdy.com/" target="_blank" rel="noopener">three.js</a> and
+			<a href="http://sandbox.babylonjs.com/" target="_blank" rel="noopener">babylon.js</a>. If the model
+			appears correctly in one or more applications,
+			<a href="https://github.com/mrdoob/three.js/issues/new" target="_blank" rel="noopener">file a bug against three.js</a>.
+			If the model cannot be shown in any application, we strongly encourage
+			filing a bug with the application used to create the model.
+		</li>
+		<li>
+			Try scaling the model up or down by a factor of 1000. Many models are
+			scaled differently, and large models may not appear if the camera is
+			inside the model.
+		</li>
+		<li>
+			Try to add and position a light source. The model may be hidden in the dark.
+		</li>
+		<li>
+			Look for failed texture requests in the network tab, like
+			<em>C:\\Path\To\Model\texture.jpg</em>. Use paths relative to your
+			model instead, such as <em>images/texture.jpg</em> — this may require
+			editing the model file in a text editor.
+		</li>
+	</ol>
+
+	<h2>Asking for help</h2>
+
+	<p>
+		If you've gone through the troubleshooting process above and your model
+		still isn't working, the right approach to asking for help will get you to
+		a solution faster. Post a question on the
+		<a href="https://discourse.threejs.org/" target="_blank" rel="noopener">three.js forum</a> and, whenever possible,
+		include your model (or a simpler model with the same problem) in any formats
+		you have available. Include enough information for someone else to reproduce
+		the issue quickly — ideally, a live demo.
+	</p>
+
+<!--    </head>-->
+		<h1>[name]</h1>
+
+		<p>
+		Three.js uses *matrices* to encode 3D transformations---translations (position), rotations, and scaling. Every instance of [page:Object3D] has a [page:Object3D.matrix matrix] which stores that object's position, rotation, and scale. This page describes how to update an object's transformation.
+		</p>
+
+		<h2>Convenience properties and *matrixAutoUpdate*</h2>
+
+		<p>
+			There are two ways to update an object's transformation:
+		</p>
+		<ol>
+			<li>
+				Modify the object's *position*, *quaternion*, and *scale* properties, and let three.js recompute
+				the object's matrix from these properties:
+				<code>
+object.position.copy( start_position );<br/>
+object.quaternion.copy( quaternion );<br/>
+				</code>
+				By default, the *matrixAutoUpdate* property is set true, and the matrix will be automatically recalculated.
+				If the object is static, or you wish to manually control when recalculation occurs, better performance can be obtained by setting the property false:
+				<code>
+object.matrixAutoUpdate = false;
+				</code>
+				And after changing any properties, manually update the matrix:
+				<code>
+object.updateMatrix();
+				</code>
+			</li>
+			<li>
+				Modify the object's matrix directly. The [page:Matrix4] class has various methods for modifying the matrix:
+				<code>
+object.matrix.setRotationFromQuaternion( quaternion );<br/>
+object.matrix.setPosition( start_position );<br/>
+object.matrixAutoUpdate = false;<br/>
+				</code>
+				Note that *matrixAutoUpdate* <em>must</em> be set to *false* in this case, and you should make sure <em>not</em> to call *updateMatrix*. Calling *updateMatrix* will clobber the manual changes made to the matrix, recalculating the matrix from *position*, *scale*, and so on.
+			</li>
+		</ol>
+
+		<h2>Object and world matrices</h2>
+		<p>
+		An object's [page:Object3D.matrix matrix] stores the object's transformation <em>relative</em> to the object's [page:Object3D.parent parent]; to get the object's transformation in <em>world</em> coordinates, you must access the object's [page:Object3D.matrixWorld].
+		</p>
+		<p>
+		When either the parent or the child object's transformation changes, you can request that the child object's [page:Object3D.matrixWorld matrixWorld] be updated by calling [page:Object3D.updateMatrixWorld updateMatrixWorld]().
+		</p>
+
+		<h2>Rotation and Quaternion</h2>
+		<p>
+		Three.js provides two ways of representing 3D rotations: [page:Euler Euler angles] and [page:Quaternion Quaternions], as well as methods for converting between the two. Euler angles are subject to a problem called "gimbal lock," where certain configurations can lose a degree of freedom (preventing the object from being rotated about one axis). For this reason, object rotations are <em>always</em> stored in the object's [page:Object3D.quaternion quaternion].
+		</p>
+		<p>
+		Previous versions of the library included a *useQuaternion* property which, when set to false, would cause the object's [page:Object3D.matrix matrix] to be calculated from an Euler angle. This practice is deprecated---instead, you should use the [page:Object3D.setRotationFromEuler setRotationFromEuler] method, which will update the quaternion.
+		</p>
+
+		<h1>[name]</h1>
+
+		<p class="desc">
+			The following is a collection of links that you might find useful when learning three.js.<br />
+			If you find something that you'd like to add here, or think that one of the links below is no longer
+			relevant or working, feel free to click the 'edit' button in the bottom right and make some changes!<br /><br />
+
+			Note also that as three.js is under rapid development, a lot of these links will contain information that is
+			out of date - if something isn't working as you'd expect or as one of these links says it should,
+			check the browser console for warnings or errors. Also check the relevant docs pages.
+		</p>
+
+		<h2>Help forums</h2>
+		<p>
+			Three.js officially uses the [link:https://discourse.threejs.org/ forum] and [link:http://stackoverflow.com/tags/three.js/info Stack Overflow] for help requests.
+			If you need assistance with something, that's the place to go. Do NOT open an issue on Github for help requests.
+		</p>
+
+		<h2>Tutorials and courses</h2>
+
+		<h3>Getting started with three.js</h3>
+		<ul>
+			<li>
+				[link:https://threejsfundamentals.org/threejs/lessons/threejs-fundamentals.html Three.js Fundamentals starting lesson]
+			</li>
+			<li>
+				[link:https://codepen.io/rachsmith/post/beginning-with-3d-webgl-pt-1-the-scene Beginning with 3D WebGL] by [link:https://codepen.io/rachsmith/ Rachel Smith].
+			</li>
+			<li>
+				[link:https://www.august.com.au/blog/animating-scenes-with-webgl-three-js/ Animating scenes with WebGL and three.js]
+			</li>
+		</ul>
+
+		<h3>More extensive / advanced articles and courses</h3>
+		<ul>
+			<li>
+				[link:https://discoverthreejs.com/ Discover three.js]
+			</li>
+			<li>
+				[link:https://threejsfundamentals.org/ Three.js Fundamentals]
+			</li>
+			<li>
+				[link:http://blog.cjgammon.com/ Collection of tutorials] by [link:http://www.cjgammon.com/ CJ Gammon].
+			</li>
+			<li>
+				[link:https://medium.com/soffritti.pierfrancesco/glossy-spheres-in-three-js-bfd2785d4857 Glossy spheres in three.js].
+			</li>
+		 <li>
+			 [link:https://www.udacity.com/course/cs291 Interactive 3D Graphics] - a free course on Udacity that teaches the fundamentals of 3D Graphics,
+			 and uses three.js as its coding tool.
+		 </li>
+		 <li>
+			[Link:https://aerotwist.com/tutorials/ Aerotwist] tutorials by [link:https://github.com/paullewis/ Paul Lewis].
+		 </li>
+			 <li>
+			 [link:http://learningthreejs.com/ Learning Three.js] – a blog with articles dedicated to teaching three.js
+		 </li>
+		 <li>
+			 [link:https://discourse.threejs.org/t/three-js-bookshelf/2468 Three.js Bookshelf] - Looking for more resources about three.js or computer graphics in general?
+			 Check out the selection of literature recommended by the community.
+		 </li>
+		</ul>
+
+		<h2>News and Updates</h2>
+		<ul>
+			<li>
+				[link:https://twitter.com/hashtag/threejs Three.js on Twitter]
+			</li>
+			<li>
+				[link:http://www.reddit.com/r/threejs/ Three.js on reddit]
+			</li>
+			<li>
+				[link:http://www.reddit.com/r/webgl/ WebGL on reddit]
+			</li>
+			<li>
+				[link:http://learningwebgl.com/blog/ Learning WebGL Blog] – The authoritive news source for WebGL.
+			</li>
+		</ul>
+
+		<h2>Examples</h2>
+		<ul>
+			<li>
+				[link:https://github.com/edwinwebb/three-seed/ three-seed] - three.js starter project with ES6 and Webpack
+			</li>
+			<li>
+				[link:http://stemkoski.github.io/Three.js/index.html Professor Stemkoskis Examples] - a collection of beginner friendly
+				examples built using three.js r60.
+			</li>
+			<li>
+				[link:https://threejs.org/examples/ Official three.js examples] - these examples are
+				maintained as part of the three.js repository, and always use the latest version of three.js.
+			</li>
+			<li>
+				[link:https://raw.githack.com/mrdoob/three.js/dev/examples/ Official three.js dev branch examples]  -
+				Same as the above, except these use the dev branch of three.js,	and are used to check that
+				everything is working as three.js being is developed.
+			</li>
+		</ul>
+
+	 <h2>Tools</h2>
+	 <ul>
+		 <li>
+			[link:http://www.physgl.org/ physgl.org] - JavaScript front-end with wrappers to three.js, to bring WebGL
+ 			graphics to students learning physics and math.
+		 </li>
+		 <li>
+			 [link:https://whsjs.readme.io/ Whitestorm.js] – Modular three.js framework with AmmoNext physics plugin.
+		 </li>
+
+		<li>
+			[link:http://zz85.github.io/zz85-bookmarklets/threelabs.html Three.js Inspector]
+		</li>
+		<li>
+			[link:http://idflood.github.io/ThreeNodes.js/ ThreeNodes.js].
+		</li>
+		<li>
+			[link:https://marketplace.visualstudio.com/items?itemName=bierner.comment-tagged-templates comment-tagged-templates] - VSCode extension syntax highlighting for tagged template strings, like: glsl.js.
+		</li>
+		<li>
+			[link:https://github.com/MozillaReality/WebXR-emulator-extension WebXR-emulator-extension]
+		</li>
+	 </ul>
+
+	<h2>WebGL References</h2>
+	 <ul>
+		 <li>
+			[link:https://www.khronos.org/files/webgl/webgl-reference-card-1_0.pdf webgl-reference-card.pdf] - Reference of all WebGL and GLSL keywords, terminology, syntax and definitions.
+		 </li>
+	 </ul>
+
+	 <h2>Old Links</h2>
+	 <p>
+		These links are kept for historical purposes - you may still find them useful, but be warned that
+		they may have information relating to very old versions of three.js.
+	 </p>
+
+	 <ul>
+		<li>
+			<a href="https://www.youtube.com/watch?v=Dir4KO9RdhM" target="_blank">AlterQualia at WebGL Camp 3</a>
+		</li>
+		<li>
+			[link:http://yomotsu.github.io/threejs-examples/ Yomotsus Examples] - a collection of examples using three.js r45.
+		</li>
+		<li>
+			[link:http://fhtr.org/BasicsOfThreeJS/#1 Introduction to Three.js] by [link:http://github.com/kig/ Ilmari Heikkinen] (slideshow).
+		</li>
+		<li>
+			[link:http://www.slideshare.net/yomotsu/webgl-and-threejs WebGL and Three.js] by [link:http://github.com/yomotsu Akihiro Oyamada] (slideshow).
+		</li>
+		<li>
+			[link:http://bkcore.com/blog/general/adobe-user-group-nl-talk-video-hexgl.html Fast HTML5 game development using three.js] by [link:https://github.com/BKcore BKcore] (video).
+		</li>
+		<li>
+			<a href="https://www.youtube.com/watch?v=VdQnOaolrPA" target="_blank">Trigger Rally</a>  by [link:https://github.com/jareiko jareiko] (video).
+		</li>
+		<li>
+			[link:http://blackjk3.github.io/threefab/ ThreeFab] - scene editor, maintained up until around three.js r50.
+		</li>
+		<li>
+			[link:http://bkcore.com/blog/3d/webgl-three-js-workflow-tips.html Max to Three.js workflow tips and tricks] by [link:https://github.com/BKcore BKcore]
+		</li>
+		<li>
+			[link:http://12devsofxmas.co.uk/2012/01/webgl-and-three-js/ A whirlwind look at Three.js]
+			by [link:http://github.com/nrocy Paul King]
+		</li>
+		<li>
+			[link:http://bkcore.com/blog/3d/webgl-three-js-animated-selective-glow.html Animated selective glow in Three.js]
+			by [link:https://github.com/BKcore BKcore]
+		</li>
+		<li>
+			[link:http://www.natural-science.or.jp/article/20120220155529.php Building A Physics Simulation Environment] - three.js tutorial in Japanese
+		</li>
+	 </ul>
+
+		<h1>[name]</h1>
+		<p>
+			Even though this is becoming less and less of a problem, some devices or browsers may still not support WebGL.
+			The following method allows you to check if it is supported and display a message to the user if it is not.
+		</p>
+
+		<p>
+			Add	[link:https://github.com/mrdoob/three.js/blob/master/examples/jsm/WebGL.js]
+			to your javascript and run the following before attempting to render anything.
+		</p>
+
+		<code>
+		if ( WEBGL.isWebGLAvailable() ) {<br/>
+<br/>
+			// Initiate function or other initializations here<br/>
+			animate();<br/>
+<br/>
+		} else {<br/>
+<br/>
+			const warning = WEBGL.getWebGLErrorMessage();<br/>
+			document.getElementById( 'container' ).appendChild( warning );<br/>
+<br/>
+		}<br/>
+		</code>
+	</body>
+</html>
