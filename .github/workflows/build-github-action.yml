@@ -1,5 +1,5 @@
-name: check-github-actions
-run-name: ${{ github.actor }} is learning GitHub Actions
+name: build-github-actions
+run-name: ${{ github.actor }} is building dist
 on: [push]
 jobs:
   check-bats-version:
@@ -9,6 +9,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
+      - run: npm install
       - run: npm run build
       - run: echo "check dist"
 
