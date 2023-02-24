@@ -1,5 +1,12 @@
-# bambam2174.github.io
+# Scrollable 3D Animation with Three.js
 
-At the moment there is not much to tell in the README.md
-because I'm testing around without having a certain aim.
-I'll figure it out later.
+- Watch the [full tutorial](https://youtu.be/Q7AOvWpIVHU) on YouTube
+- [Scrollable Three.js Animation](https://fireship.io/snippets/threejs-scrollbar-animation) Snippet
+
+## Usage
+
+```
+git clone <this-repo>
+npm install
+npm run dev
+```
