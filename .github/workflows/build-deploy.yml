@@ -38,6 +38,8 @@ jobs:
       - run: npm run clean
       - run: npm run build
       - run: echo "dist built"
+      - run: npm run gltf
+      - run: echo "gltf assest added"
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
