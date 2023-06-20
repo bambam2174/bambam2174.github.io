@@ -8,7 +8,7 @@ canvas {
 
 
 :root {
-  --dark-bg: rgba(15, 15, 15, 0.95);
+  --dark-bg: rgba(15, 15, 15, 0.35);
   --spacing: 350px;
 
   font-family: brandon-grotesque, sans-serif;
@@ -102,4 +102,8 @@ a {
   width: 45px;
   height: 45px;
   margin: 1px 5px;
+}
+
+ul#links {
+  list-style-type: none;
 }
