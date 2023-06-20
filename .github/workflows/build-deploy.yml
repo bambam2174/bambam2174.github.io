@@ -33,8 +33,9 @@ jobs:
       - name: Setup Node 16
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: "16"
       - run: npm install
+      - run: npm run clean
       - run: npm run build
       - run: echo "dist built"
       - name: Setup Pages
@@ -43,7 +44,7 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           # Upload entire repository
-          path: './dist'
+          path: "./dist"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1

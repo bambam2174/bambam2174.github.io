@@ -2,6 +2,7 @@
   "name": "three-demo",
   "version": "0.0.0",
   "scripts": {
+    "clean": "rm -rf ./dist; mkdir -p ./dist/img; cp -r img/gltf  ./dist/img",
     "dev": "vite",
     "devhost": "vite --host",
     "build": "vite build",
