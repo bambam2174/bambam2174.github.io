@@ -289,7 +289,7 @@ function createMeshMaterialWithNormalMap(pNormalTexture, metalness = 8.5, roughn
 function createWraith(pWraith, scale = 1, x = 0, y = 0, z = 0) {
 
   const gltfLoader = new GLTFLoader();
-  gltfLoader.load('./img/gltf/glb/Wraith_Animated.glb', (glb) => {
+  gltfLoader.load('img/gltf/glb/Wraith_Animated.glb', (glb) => {
     pWraith = glb.scene;
     pWraith.scale.set(scale, scale, scale);
 
