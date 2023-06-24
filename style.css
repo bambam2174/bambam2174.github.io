@@ -16,18 +16,29 @@ canvas {
   font-style: normal;
 }
 
-
 main {
   width: 100vw;
   color: white;
   z-index: 99;
   position: absolute;
-  width: 100%;
+  /* width: 100%; */
   margin: 0px auto;
   padding: 120px 0px;
 
   display: grid;
   grid-template-columns: repeat(12, 1fr);
+}
+
+.debug {
+  position: fixed;
+  z-index: 9999;
+  background-color: rgba(237, 11, 11, 0.407);
+  width: 15%;
+  padding: 5px 10px;
+}
+
+.debug p {
+  color: #d2f162;
 }
 
 h1,
@@ -38,13 +49,6 @@ blockquote {
   font-weight: 700;
   font-style: normal;
 }
-
-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
 
 
 header {
@@ -106,4 +110,10 @@ a {
 
 ul#links {
   list-style-type: none;
+}
+
+ul#links li:hover p {
+  background-color: #000;
+  color: #fff;
+  font-size: 5rem;
 }
