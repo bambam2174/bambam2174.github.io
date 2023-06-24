@@ -35,10 +35,15 @@ main {
   background-color: rgba(237, 11, 11, 0.407);
   width: 15%;
   padding: 5px 10px;
+  display: none;
 }
 
 .debug p {
   color: #d2f162;
+}
+
+p {
+  padding: 0 5px;
 }
 
 h1,
@@ -116,4 +121,16 @@ ul#links li:hover p {
   background-color: #000;
   color: #fff;
   font-size: 5rem;
+}
+
+.job {
+  background-color: rgba(33, 11, 237, 0.419);
+}
+
+.company {
+  background-color: rgba(52, 7, 188, 0.307);
+}
+
+.work p {
+  font-size: smaller;
 }
