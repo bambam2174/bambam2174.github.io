@@ -9,7 +9,6 @@ import urlNormalMap from './img/NormalMap.png';
 import urlNormalMap2 from './img/NormalMap2.png';
 import urlLovoo from './img/Lovoo_Selfie.png';
 import urlNormalMapGolfball2 from './img/NormalMapGolfball2.png';
-// import urlGLTFWraitNinja from './img/gltf/glb/wraith.glb';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
@@ -22,10 +21,15 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight
-}
+};
+
+const SCROLLDIR = {
+  UP: 'U',
+  DOWN: 'D'
+};
 
 let isScrolling = false;
-
+let scrollDir = SCROLLDIR.DOWN;
 // Debug
 // const gui = new dat.GUI()
 
@@ -77,8 +81,8 @@ scene.add(torus);
 
 // Lights
 
-const pointLight = createPointLight(5, 5, 5, 0xffffff) //new THREE.PointLight(0xffffff);
-const pointLightRed = createPointLight(-5, 5, 5, 0xff0000)
+const pointLight = createPointLight(5, 5, 5, 0xffffff);
+const pointLightRed = createPointLight(-5, 5, 5, 0xff0000);
 const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(pointLight, ambientLight);
 
@@ -157,10 +161,22 @@ meshCubicBox.position.z = -5;
 meshCubicBox.position.x = 2;
 
 // Scroll Animation
-
+let lastScrollY = document.body.getBoundingClientRect().top;
 function moveCamera(ev) {
   isScrolling = true;
+  let factor = 1;
   const t = document.body.getBoundingClientRect().top;
+  if (t > lastScrollY) {
+    scrollDir = SCROLLDIR.UP;
+    factor = -1;
+  }
+  if (t < lastScrollY) {
+    scrollDir = SCROLLDIR.DOWN;
+    factor = 1;
+  }
+  dlog('scrollDir =', scrollDir, '\nt = ', t, '\nlastScrollY = ', lastScrollY);
+  lastScrollY = t;
+
   console.log('t = ' + t);
   moon.rotation.x += 0.05;
   moon.rotation.y += 0.075;
@@ -176,7 +192,7 @@ function moveCamera(ev) {
   let tmpWraith = scene.getObjectByName('wraith_animated');
   if (tmpWraith != undefined) {
     // scene.getObjectByName('wraith_animated').rotation.y += 0.9;
-    tmpWraith.rotation.y += t * -0.00002;
+    tmpWraith.rotation.y += t * -0.00002 * factor;
   }
 
   if (ev != undefined) {
@@ -314,4 +330,13 @@ function addEmailHandler() {
   };
   document.querySelector('#gmail').addEventListener('click', clickListener);
 
+}
+
+function dlog(...params) {
+  document.dlog = document.dlog || {};
+  document.dlog.output = document.dlog.output || document.querySelector('#output');
+  document.dlog.output.innerText = '';
+  for (const element of params) {
+    document.dlog.output.innerText += element;
+  }
 }
