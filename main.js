@@ -53,6 +53,8 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = createRendererWithCam(camera);
 
 let wraith = null;
+let mixer = null;
+
 createWraith(wraith, 4, 0, -2, 35);
 
 
@@ -230,11 +232,18 @@ function animate() {
 
   moon.rotation.x += 0.5 * elapsedTime;
 
+  if (!isScrolling) {
+    meshCubicBox.rotation.y -= 0.6 * elapsedTime;
+    meshCubicBox.rotation.z -= 0.6 * elapsedTime;
+  }
+
+
   console.log('animate \nisScrolling', isScrolling);
   let tmpWraith = scene.getObjectByName('wraith_animated');
   if (!isScrolling && tmpWraith != undefined) {
     tmpWraith.rotation.y += 0.6 * elapsedTime;
   }
+  if (mixer) mixer.update(elapsedTime * 2);
 
   // controls.update();
 
@@ -315,6 +324,14 @@ function createWraith(pWraith, scale = 1, x = 0, y = 0, z = 0) {
     pWraith.position.x = x;
     pWraith.name = 'wraith_animated';
     console.log('Wraith load', pWraith);
+
+    let animations = glb.animations;
+    if (animations && animations.length) {
+      mixer = new THREE.AnimationMixer(pWraith);
+      for (const animation of animations) {
+        mixer.clipAction(animation).play();
+      }
+    }
   });
 
 }
